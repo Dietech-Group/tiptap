@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.5.2
+
+### Patch Changes
+
+- Updated dependencies [b5c1b32]
+  - @tiptap/pm@2.5.2
+  - @tiptap/core@2.5.2
+
 ## 2.5.1
 
 ### Patch Changes
