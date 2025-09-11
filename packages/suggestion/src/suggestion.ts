@@ -211,6 +211,19 @@ export function Suggestion<I = any, TSelected = any>({
   let props: SuggestionProps<I, TSelected> | undefined
   const renderer = render?.()
 
+  const exitSuggestion = (view: EditorView, pluginKeyRef: PluginKey) => {
+    const state = {
+      active: false,
+      key: null,
+      range: Range,
+      query: null,
+      text: null,
+      composing: false,
+    }
+
+    view.dispatch(view.state.tr.setMeta(pluginKeyRef, state))
+  }
+
   const plugin: Plugin<any> = new Plugin({
     key: pluginKey,
 
@@ -221,7 +234,7 @@ export function Suggestion<I = any, TSelected = any>({
           const next = this.key?.getState(view.state)
 
           // See how the state changed
-          const moved = prev.active && next.active && prev.range.from !== next.range.from
+          const moved = prev.active && next.active && !!prev.range.from && prev.range.from !== next.range.from
           const started = !prev.active && next.active
           const stopped = prev.active && !next.active
           const changed = !started && !stopped && prev.query !== next.query
@@ -245,8 +258,18 @@ export function Suggestion<I = any, TSelected = any>({
             range: state.range,
             query: state.query,
             text: state.text,
-            items: [],
+            items: handleChange || handleStart
+              ? await items({
+                editor,
+                query: state.query,
+              })
+              : [],
             command: commandProps => {
+              if (!commandProps) {
+                exitSuggestion(editor.view, pluginKey)
+                return
+              }
+
               return command({
                 editor,
                 range: state.range,
@@ -259,7 +282,7 @@ export function Suggestion<I = any, TSelected = any>({
             clientRect: decorationNode
               ? () => {
                 // because of `items` can be asynchrounous we’ll search for the current decoration node
-                  const { decorationId } = this.key?.getState(editor.state) // eslint-disable-line
+                const { decorationId } = this.key?.getState(editor.state) // eslint-disable-line
                 const currentDecorationNode = view.dom.querySelector(
                   `[data-decoration-id="${decorationId}"]`,
                 )
@@ -269,31 +292,13 @@ export function Suggestion<I = any, TSelected = any>({
               : null,
           }
 
-          if (handleStart) {
-            renderer?.onBeforeStart?.(props)
-          }
-
-          if (handleChange) {
-            renderer?.onBeforeUpdate?.(props)
-          }
-
-          if (handleChange || handleStart) {
-            props.items = await items({
-              editor,
-              query: state.query,
-            })
-          }
-
           if (handleExit) {
-            renderer?.onExit?.(props)
-          }
-
-          if (handleChange) {
-            renderer?.onUpdate?.(props)
-          }
-
-          if (handleStart) {
-            renderer?.onStart?.(props)
+            exitSuggestion(view, pluginKey)
+            return renderer?.onExit?.(props)
+          } if (handleChange) {
+            return renderer?.onUpdate?.(props)
+          } if (handleStart) {
+            return renderer?.onStart?.(props)
           }
         },
 
@@ -312,6 +317,7 @@ export function Suggestion<I = any, TSelected = any>({
       init() {
         const state: {
           active: boolean
+          key: null | string
           range: Range
           query: null | string
           text: null | string
@@ -319,6 +325,7 @@ export function Suggestion<I = any, TSelected = any>({
           decorationId?: string | null
         } = {
           active: false,
+          key: null,
           range: {
             from: 0,
             to: 0,
@@ -333,13 +340,28 @@ export function Suggestion<I = any, TSelected = any>({
 
       // Apply changes to the plugin state from a view transaction.
       apply(transaction, prev, _oldState, state) {
+        let next
+
+        if (transaction.getMeta(pluginKey)) {
+          next = { ...transaction.getMeta(pluginKey) }
+        } else {
+          next = { ...prev }
+        }
+
         const { isEditable } = editor
         const { composing } = editor.view
         const { selection } = transaction
         const { empty, from } = selection
-        const next = { ...prev }
 
         next.composing = composing
+
+        // Don't advance with suggestion if not active and not the open character.
+        if (!next.active && next.key !== char) {
+          return next
+        } if (next.active && next.key === char) {
+          next.key = null
+          return next
+        }
 
         // We can only be suggesting if the view is editable, and:
         //   * there is no selection, or
@@ -404,13 +426,28 @@ export function Suggestion<I = any, TSelected = any>({
     props: {
       // Call the keydown hook if suggestion is active.
       handleKeyDown(view, event) {
-        const { active, range } = plugin.getState(view.state)
+        const tr = view.state.tr
+        const state = this.getState(view.state)
 
-        if (!active) {
+        // Set state and handle start
+        if (!state?.active && event.key === char) {
+          const updatedState = { ...state }
+
+          updatedState.active = true
+          updatedState.key = event.key
+          view.dispatch(tr.setMeta(pluginKey, updatedState))
+          return
+        } if (!state?.active) {
+          // Ignore everything else if it is inactive.
           return false
         }
+        // Reset state on Escape and handle exit.
+        if (event.key === 'Escape') {
+          exitSuggestion(view, pluginKey)
+          return
+        }
 
-        return renderer?.onKeyDown?.({ view, event, range }) || false
+        return renderer?.onKeyDown?.({ view, event, range: state.range }) || false
       },
 
       // Setup decorator on the currently active suggestion.
