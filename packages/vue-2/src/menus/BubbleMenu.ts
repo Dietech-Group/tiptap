@@ -53,12 +53,12 @@ export const BubbleMenu: Component = {
           return
         }
 
-        ;(this.$el as HTMLElement).style.visibility = 'hidden'
-        ;(this.$el as HTMLElement).style.position = 'absolute'
-
-        this.$el.remove()
-
         this.$nextTick(() => {
+          ;(this.$el as HTMLElement).style.visibility = 'hidden'
+          ;(this.$el as HTMLElement).style.position = 'absolute'
+
+          this.$el.remove()
+
           editor.registerPlugin(
             BubbleMenuPlugin({
               updateDelay: this.updateDelay,
@@ -76,7 +76,7 @@ export const BubbleMenu: Component = {
   },
 
   render(this: BubbleMenuInterface, createElement: CreateElement) {
-    return createElement('div', { style: { visibility: 'hidden' } }, this.$slots.default)
+    return createElement('div', {}, this.$slots.default)
   },
 
   beforeDestroy(this: BubbleMenuInterface) {
