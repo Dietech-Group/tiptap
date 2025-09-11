@@ -1,0 +1,76 @@
+name: release
+
+env:
+  PNPM_VERSION: 9.15.4
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Load turbo cache
+        uses: actions/cache@v4.2.4
+        id: turbo-cache
+        with:
+          path: |
+            .turbo
+            **/.eslintcache
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-${{ github.sha }}
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        id: install-dependencies
+        run: pnpm install
+
+      - name: Try to build the packages
+        id: build-packages
+        run: pnpm run build
+
+      - name: Create package archives
+        run: |
+          mkdir archives
+          while IFS= read -d $'\0' -r file ; do
+            packagename=$(basename $file);
+            tar --exclude "node_modules" --exclude ".turbo" --exclude ".cache" --directory packages/$packagename -cvzf archives/tiptap-$packagename.tgz .;
+          done < <(find ./packages -mindepth 1 -maxdepth 1 -type d -print0)
+
+      - name: Create GitHub release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: archives/*.tgz
