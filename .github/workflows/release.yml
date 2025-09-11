@@ -1,0 +1,69 @@
+name: release
+
+env:
+  PNPM_VERSION: 9.15.4
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - uses: actions/checkout@v4.1.4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Load cached dependencies
+        uses: actions/cache@v4.2.3
+        id: cache
+        with:
+          path: |
+            **/node_modules
+            **/.turbo
+            /home/runner/.cache/Cypress
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        id: install-dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm install
+
+      - name: Try to build the packages
+        id: build-packages
+        run: npm run build:ci
+
+      - name: Create package archives
+        run: |
+          mkdir archives
+          while IFS= read -d $'\0' -r file ; do
+            packagename=$(basename $file);
+            tar --exclude "node_modules" --exclude ".turbo" --exclude ".cache" --directory packages/$packagename -cvzf archives/tiptap-$packagename.tgz .;
+          done < <(find ./packages -mindepth 1 -maxdepth 1 -type d -print0)
+
+      - name: Create GitHub release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: archives/*.tgz
