@@ -63,10 +63,12 @@ jobs:
       - name: Create package archives
         run: |
           mkdir archives
+          cd packages
           while IFS= read -d $'\0' -r file ; do
-            packagename=$(basename $file);
-            tar --exclude "node_modules" --exclude ".turbo" --exclude ".cache" --directory packages/$packagename -cvzf archives/tiptap-$packagename.tgz .;
-          done < <(find ./packages -mindepth 1 -maxdepth 1 -type d -print0)
+            cd $(basename $file);
+            pnpm pack --pack-destination ../../archives;
+            cd ..;
+          done < <(find . -mindepth 1 -maxdepth 1 -type d -print0)
 
       - name: Create GitHub release
         uses: "marvinpinto/action-automatic-releases@latest"
