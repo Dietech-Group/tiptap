@@ -12,6 +12,30 @@ Tiptap Editor is complemented by the collaboration open-source backend [Hocuspoc
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/WtJ49jGshW)
 [![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub)](https://github.com/sponsors/ueberdosis)
 
+### Dietech Branches
+- The project was forked and all customizations have been done in the `dietech*` branches.
+- The current branch is `dietech-v3` which is based on the current `master` branch (tiptap version v3.*).
+- When a new tiptap version is released do the following:
+  - Pull changes and rebase customized branch. You may need to resolve merge conflicts while rebasing.
+
+    ```
+    git checkout main
+    git pull
+    git checkout dietech-v3
+    git rebase main
+    git push
+    ```
+
+  - Trigger the github action to release a new version ([release.yml](.github/workflows/release.yml)) with creating a new tag (starting with `v`) and push it:
+
+    ```
+    git tag <tagname>
+    git push origin <tagname>
+    ```
+    The naming scheme of the tags should be: `v<tiptap-version>-dietech.<change-version>`. The `<tiptap-version>` is the current version of the forked tiptap repo. The `<change-version>` is the number of the release of the current customized tiptap version. It restarts wit `0` for every new `<tiptap-version>`.
+    <br><br>
+    Example: `v3.6.2-dietech.0` (1st release of the customized tiptap version 3.6.2)
+
 ### How does the Tiptap Editor work?
 
 - **Headless Framework:** Tiptap does not rely on a user interface. So there is no need for class overrides or code hacks. If you do need an example UI feel free to browse our [UI templates](#examples-codesandbox-and-ui-templates) linked below.
