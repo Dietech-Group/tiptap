@@ -321,12 +321,13 @@ export function Suggestion<I = any, TSelected = any>({
             range: state.range,
             query: state.query,
             text: state.text,
-            items: handleChange || handleStart
-              ? await items({
-                editor,
-                query: state.query,
-              })
-              : [],
+            items:
+              handleChange || handleStart
+                ? await items({
+                    editor,
+                    query: state.query,
+                  })
+                : [],
             command: commandProps => {
               if (!commandProps) {
                 dispatchExit(editor.view, pluginKey)
@@ -346,9 +347,11 @@ export function Suggestion<I = any, TSelected = any>({
           if (handleExit) {
             dispatchExit(view, pluginKey)
             return renderer?.onExit?.(props)
-          } if (handleChange) {
+          }
+          if (handleChange) {
             return renderer?.onUpdate?.(props)
-          } if (handleStart) {
+          }
+          if (handleStart) {
             return renderer?.onStart?.(props)
           }
         },
@@ -406,7 +409,7 @@ export function Suggestion<I = any, TSelected = any>({
           if (meta.exit) {
             next.active = false
             next.decorationId = null
-            next.range = {from: 0, to: 0}
+            next.range = { from: 0, to: 0 }
             next.query = null
             next.text = null
 

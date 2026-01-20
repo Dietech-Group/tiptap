@@ -8,7 +8,6 @@
 [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.gg/WtJ49jGshW)
 [![Sponsor](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub)](https://github.com/sponsors/ueberdosis)
 
-
 # Tiptap Editor
 
 The Tiptap Editor is a headless, framework-agnostic rich text editor that's customizable and extendable through extensions. Its headless nature means it comes without a set user interface, offering full design freedom (for a jumpstart, see linked [UI templates](#examples-codesandbox-and-ui-templates) below). Tiptap is based on the highly reliable [ProseMirror](https://github.com/ProseMirror/prosemirror) library.
@@ -16,9 +15,11 @@ The Tiptap Editor is a headless, framework-agnostic rich text editor that's cust
 Tiptap Editor is complemented by the collaboration open-source backend [Hocuspocus](https://github.com/ueberdosis/hocuspocus). Both the Editor and Hocuspocus form the foundation of the [Tiptap Suite](https://tiptap.dev/).
 
 ### Dietech Branches
+
 - The project was forked and all customizations have been done in the `dietech*` branches.
-- The current branch is `dietech-v3` which is based on the current `master` branch (tiptap version v3.*).
+- The current branch is `dietech-v3` which is based on the current `master` branch (tiptap version v3.\*).
 - When a new tiptap version is released do the following:
+
   - Sync new changes of main branch via github ui
   - Pull changes and rebase customized branch. You may need to resolve merge conflicts while rebasing.
 
@@ -36,10 +37,10 @@ Tiptap Editor is complemented by the collaboration open-source backend [Hocuspoc
     git tag <tagname>
     git push origin <tagname>
     ```
+
     The naming scheme of the tags should be: `v<tiptap-version>-dietech.<change-version>`. The `<tiptap-version>` is the current version of the forked tiptap repo. The `<change-version>` is the number of the release of the current customized tiptap version. It restarts wit `0` for every new `<tiptap-version>`.
     <br><br>
     Example: `v3.6.2-dietech.0` (1st release of the customized tiptap version 3.6.2)
-
 
 ### How does the Tiptap Editor work?
 
